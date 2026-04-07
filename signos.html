@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AstroLog</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--bg-deep:#050505;--accent:#b026ff;--glass:rgba(20,20,20,0.85);}
+body{background:var(--bg-deep);color:#ddd;font-family:'Courier New',monospace;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+body::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(176,38,255,0.1) 0%,transparent 60%);animation:spin 60s linear infinite;z-index:-1;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.wrap{width:100%;max-width:420px;padding:2rem;border:1px solid #333;background:var(--glass);box-shadow:0 0 30px rgba(0,0,0,0.8);position:relative;}
+input[type=date]{background:#111;border:1px solid #444;color:#fff;padding:10px;width:100%;margin:15px 0;outline:none;}
+input[type=date]:focus{border-color:var(--accent);}
+button{background:var(--accent);color:#fff;border:none;padding:12px;width:100%;font-weight:bold;cursor:pointer;text-transform:uppercase;letter-spacing:2px;transition:0.3s;}
+button:hover{background:#fff;color:var(--accent);box-shadow:0 0 15px var(--accent);}
+.res{display:none;margin-top:20px;border-top:1px solid #333;padding-top:20px;}
+.sig-name{font-size:2rem;color:var(--accent);text-align:center;display:block;margin-bottom:10px;}
+.meta{display:flex;justify-content:space-between;font-size:0.8rem;color:#888;margin-bottom:15px;}
+.desc{font-size:0.9rem;line-height:1.4;color:#ccc;text-align:justify;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div id="form-layer">
+        <h4 style="text-align:center;letter-spacing:-1px;margin-bottom:20px;">INSIRA DATA DE NASCIMENTO</h4>
+        <input type="date" id="dt" required>
+        <button onclick="proc()">CALCULAR</button>
+    </div>
+    <div id="res-layer" class="res">
+        <span class="sig-name" id="out-nome"></span>
+        <div class="meta">
+            <span id="out-elem"></span>
+            <span id="out-reg"></span>
+        </div>
+        <p class="desc" id="out-desc"></p>
+        <button onclick="loc()" style="margin-top:20px;background:transparent;border:1px solid #444;color:#666;font-size:0.7rem;">RESETAR</button>
+    </div>
+</div>
+<script>
+const DB=`<signos><s n="Áries" i="3-21" f="4-19" e="Fogo" r="Marte" d="Ação imediata. Conflito é combustível. Líder natural, mas impaciente."/><s n="Touro" i="4-20" f="5-20" e="Terra" r="Vênus" d="Estabilidade absoluta. Resistência à mudança. Acumula recursos e guarda ressentimentos."/><s n="Gêmeos" i="5-21" f="6-20" e="Ar" r="Mercúrio" d="Informação é poder. Dualidade constante. Adapta-se a qualquer cenário social."/><s n="Câncer" i="6-21" f="7-22" e="Água" r="Lua" d="Proteção emocional. Memória de elefante. Intuição afiada, humor instável."/><s n="Leão" i="7-23" f="8-22" e="Fogo" r="Sol" d="Centro das atenções. Generosidade teatral. Orgulho é a maior vulnerabilidade."/><s n="Virgem" i="8-23" f="9-22" e="Terra" r="Mercúrio" d="Análise crítica. Perfeccionismo paralisante. Serve para controlar o ambiente."/><s n="Libra" i="9-23" f="10-22" e="Ar" r="Vênus" d="Equilíbrio forçado. Indecisão crônica. Evita confronto a qualquer custo."/><s n="Escorpião" i="10-23" f="11-21" e="Água" r="Plutão" d="Transformação radical. Segredos e poder. Não perdoa, não esquece."/><s n="Sagitário" i="11-22" f="12-21" e="Fogo" r="Júpiter" d="Expansão constante. Verdade brutal. Otimismo cego para riscos."/><s n="Capricórnio" i="12-22" f="1-19" e="Terra" r="Saturno" d="Ambição fria. Estrutura e tempo. Sucesso é a única redenção."/><s n="Aquário" i="1-20" f="2-18" e="Ar" r="Urano" d="Ruptura de padrões. Visão futurista. Desapego emocional como defesa."/><s n="Peixes" i="2-19" f="3-20" e="Água" r="Netuno" d="Dissolução de limites. Empatia extrema. Fuga da realidade via sonhos."/></signos>`;
+
+function proc(){
+    const v=document.getElementById('dt').value;
+    if(!v)return;
+    const d=new Date(v);
+    const day=d.getUTCDate();
+    const mon=d.getUTCMonth()+1;
+    const val=mon+'-'+day;
+    
+    const p=new DOMParser().parseFromString(DB,'text/xml');
+    const signs=p.getElementsByTagName('s');
+    let found=null;
+
+    for(let i=0;i<signs.length;i++){
+        const node=signs[i];
+        const start=node.getAttribute('i').split('-');
+        const end=node.getAttribute('f').split('-');
+        
+        const sM=parseInt(start[0]), sD=parseInt(start[1]);
+        const eM=parseInt(end[0]), eD=parseInt(end[1]);
+        
+        let match=false;
+        if(sM>eM){
+            if((mon===sM&&day>=sD)||(mon===eM&&day<=eD))match=true;
+        }else{
+            if((mon===sM&&day>=sD)||(mon===eM&&day<=eD)||(mon>sM&&mon<eM))match=true;
+        }
+        if(match){found=node;break;}
+    }
+
+    if(found){
+        document.getElementById('out-nome').innerText=found.getAttribute('n');
+        document.getElementById('out-elem').innerText='ELEMO: '+found.getAttribute('e');
+        document.getElementById('out-reg').innerText='REG: '+found.getAttribute('r');
+        document.getElementById('out-desc').innerText=found.getAttribute('d');
+        document.getElementById('form-layer').classList.add('hidden');
+        document.getElementById('res-layer').style.display='block';
+    }
+}
+function loc(){location.reload();}
+</script>
+</body>
+</html>
